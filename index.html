@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADOFAI Key Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100%;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #hud {
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 16px;
+            border-bottom: 2px solid #ff6a00;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .hud-section {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ff6a00;
+        }
+
+        #control-panel {
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #333;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .control-group label {
+            white-space: nowrap;
+            color: #ccc;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            height: 6px;
+            cursor: pointer;
+            accent-color: #ff6a00;
+        }
+
+        select {
+            padding: 5px 10px;
+            background-color: #222;
+            color: #ff6a00;
+            border: 1px solid #ff6a00;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        button {
+            padding: 5px 12px;
+            background-color: #222;
+            color: #ff6a00;
+            border: 1px solid #ff6a00;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: #ff6a00;
+            color: #000;
+        }
+
+        #container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            width: 100%;
+        }
+
+        #gameCanvas {
+            display: block;
+            background-color: #0a0a0a;
+        }
+
+        .lane-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        .lane {
+            flex: 1;
+            position: relative;
+            border-right: 1px solid #333;
+            background-color: transparent;
+        }
+
+        .lane:last-child {
+            border-right: none;
+        }
+
+        .key-label {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <div class="hud-section">
+            <div class="stat">
+                <div class="stat-label">Current KPS</div>
+                <div class="stat-value" id="kps">0.0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Max KPS</div>
+                <div class="stat-value" id="maxKps">0.0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total</div>
+                <div class="stat-value" id="total">0</div>
+            </div>
+        </div>
+        <div class="hud-section" style="margin-left: auto;">
+            <span id="speedDisplay">Speed: 2.5</span>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div class="control-group">
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="0.5" max="15" step="0.1" value="2.5">
+        </div>
+        <div class="control-group">
+            <label for="directionSelect">Direction:</label>
+            <select id="directionSelect">
+                <option value="descending">Descending</option>
+                <option value="ascending">Ascending</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="chromaSelect">Background:</label>
+            <select id="chromaSelect">
+                <option value="black">Black</option>
+                <option value="green">Chroma Green</option>
+                <option value="blue">Chroma Blue</option>
+                <option value="magenta">Chroma Magenta</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script>
+        // Key Configuration
+        const KEYS = {
+            '1': 0,
+            '2': 1,
+            'e': 2,
+            'p': 3,
+            '=': 4,
+            'backspace': 5
+        };
+
+        const LANE_COUNT = 6;
+        const ORANGE_COLOR = '#ff6a00';
+        const PARTICLE_LIFETIME = 0.3;
+        const PARTICLE_COUNT = 6;
+
+        // State
+        let gameState = {
+            speed: 2.5,
+            direction: 'descending',
+            chromaMode: 'black',
+            notes: [],
+            particles: [],
+            keyPressed: new Set(),
+            keyPressCount: 0,
+            lastSecondPresses: [],
+            maxKps: 0,
+            totalPresses: 0
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Initialize canvas
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 110;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Get chroma color
+        function getChromaColor() {
+            const colors = {
+                'black': '#0a0a0a',
+                'green': '#00ff00',
+                'blue': '#0000ff',
+                'magenta': '#ff00ff'
+            };
+            return colors[gameState.chromaMode] || colors['black'];
+        }
+
+        // Particle system
+        function createParticles(laneIndex) {
+            const laneWidth = canvas.width / LANE_COUNT;
+            const centerX = (laneIndex + 0.5) * laneWidth;
+            const posY = gameState.direction === 'descending' ? canvas.height - 40 : 40;
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const angle = (Math.random() * Math.PI * 2);
+                const speed = 100 + Math.random() * 150;
+                gameState.particles.push({
+                    x: centerX,
+                    y: posY,
+                    vx: Math.cos(angle) * speed,
+                    vy: (gameState.direction === 'descending' ? -1 : 1) * Math.sin(angle) * speed,
+                    lifetime: PARTICLE_LIFETIME,
+                    maxLifetime: PARTICLE_LIFETIME
+                });
+            }
+        }
+
+        // Update particles
+        function updateParticles(deltaTime) {
+            gameState.particles = gameState.particles.filter(p => {
+                p.lifetime -= deltaTime;
+                p.x += p.vx * deltaTime;
+                p.y += p.vy * deltaTime;
+                return p.lifetime > 0;
+            });
+        }
+
+        // Draw particles
+        function drawParticles() {
+            gameState.particles.forEach(p => {
+                const opacity = p.lifetime / p.maxLifetime;
+                ctx.fillStyle = `rgba(255, 106, 0, ${opacity * 0.8})`;
+                const size = 3 + (1 - opacity) * 2;
+                ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
+            });
+        }
+
+        // Generate notes
+        function generateNotes() {
+            const baseTime = performance.now() / 1000;
+            const viewportHeight = canvas.height;
+            const noteHeight = 30;
+            const laneWidth = canvas.width / LANE_COUNT;
+
+            for (let lane = 0; lane < LANE_COUNT; lane++) {
+                // Pattern: alternating single notes and chords
+                for (let i = 0; i < 100; i++) {
+                    let time = baseTime + i * 0.3;
+                    
+                    if (i % 5 === 0 && i % 10 !== 0) {
+                        // Chord of 2-3 lanes
+                        const chordLanes = [lane, (lane + 1) % LANE_COUNT];
+                        if (lane < LANE_COUNT - 1) {
+                            chordLanes.forEach(l => {
+                                const posY = gameState.direction === 'descending' 
+                                    ? time * gameState.speed * 100 
+                                    : canvas.height - time * gameState.speed * 100;
+                                
+                                if (Math.abs(posY - canvas.height / 2) < viewportHeight) {
+                                    gameState.notes.push({
+                                        lane: l,
+                                        time: time,
+                                        height: noteHeight,
+                                        laneWidth: laneWidth
+                                    });
+                                }
+                            });
+                        }
+                    } else if (i % 10 !== 0) {
+                        const posY = gameState.direction === 'descending' 
+                            ? time * gameState.speed * 100 
+                            : canvas.height - time * gameState.speed * 100;
+                        
+                        if (Math.abs(posY - canvas.height / 2) < viewportHeight) {
+                            gameState.notes.push({
+                                lane: lane,
+                                time: time,
+                                height: noteHeight,
+                                laneWidth: laneWidth
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Draw notes
+        function drawNotes(currentTime) {
+            const laneWidth = canvas.width / LANE_COUNT;
+            const hitZoneY = gameState.direction === 'descending' ? canvas.height - 50 : 50;
+
+            gameState.notes.forEach(note => {
+                const laneX = note.lane * laneWidth;
+                let noteY;
+
+                if (gameState.direction === 'descending') {
+                    noteY = canvas.height - (currentTime - note.time) * gameState.speed * 100;
+                } else {
+                    noteY = (currentTime - note.time) * gameState.speed * 100;
+                }
+
+                if (noteY > -50 && noteY < canvas.height + 50) {
+                    ctx.fillStyle = ORANGE_COLOR;
+                    ctx.fillRect(laneX, noteY - note.height / 2, laneWidth, note.height);
+                }
+            });
+        }
+
+        // Draw hit zone
+        function drawHitZone() {
+            const laneWidth = canvas.width / LANE_COUNT;
+            const hitZoneY = gameState.direction === 'descending' ? canvas.height - 50 : 50;
+            const hitZoneHeight = 40;
+
+            ctx.strokeStyle = 'rgba(255, 106, 0, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, hitZoneY - hitZoneHeight / 2, canvas.width, hitZoneHeight);
+
+            // Lane separators
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
+            for (let i = 1; i < LANE_COUNT; i++) {
+                const x = i * laneWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+        }
+
+        // Update KPS
+        function updateKps() {
+            const now = performance.now() / 1000;
+            const oneSecondAgo = now - 1;
+
+            gameState.lastSecondPresses = gameState.lastSecondPresses.filter(t => t > oneSecondAgo);
+
+            const currentKps = gameState.lastSecondPresses.length;
+            const kpsDisplay = document.getElementById('kps');
+            kpsDisplay.textContent = currentKps.toFixed(1);
+
+            if (currentKps > gameState.maxKps) {
+                gameState.maxKps = currentKps;
+                document.getElementById('maxKps').textContent = gameState.maxKps.toFixed(1);
+            }
+        }
+
+        // Render loop
+        let lastTime = performance.now() / 1000;
+        function render() {
+            const currentTime = performance.now() / 1000;
+            const deltaTime = Math.min(currentTime - lastTime, 0.016);
+            lastTime = currentTime;
+
+            // Clear canvas
+            ctx.fillStyle = getChromaColor();
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw
+            updateParticles(deltaTime);
+            drawNotes(currentTime);
+            drawParticles();
+            drawHitZone();
+
+            updateKps();
+
+            requestAnimationFrame(render);
+        }
+
+        // Event listeners
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (KEYS.hasOwnProperty(key) || key === 'backspace') {
+                e.preventDefault();
+
+                const keyName = key === 'backspace' ? 'backspace' : key;
+                
+                if (!gameState.keyPressed.has(keyName)) {
+                    gameState.keyPressed.add(keyName);
+                    gameState.keyPressCount++;
+                    gameState.totalPresses++;
+                    gameState.lastSecondPresses.push(performance.now() / 1000);
+
+                    const laneIndex = KEYS[keyName];
+                    createParticles(laneIndex);
+
+                    document.getElementById('total').textContent = gameState.totalPresses;
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            const keyName = key === 'backspace' ? 'backspace' : key;
+            
+            if (KEYS.hasOwnProperty(key) || key === 'backspace') {
+                e.preventDefault();
+                gameState.keyPressed.delete(keyName);
+            }
+        });
+
+        // Control panel listeners
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            gameState.speed = parseFloat(e.target.value);
+            document.getElementById('speedDisplay').textContent = `Speed: ${gameState.speed.toFixed(1)}`;
+        });
+
+        document.getElementById('directionSelect').addEventListener('change', (e) => {
+            gameState.direction = e.target.value;
+        });
+
+        document.getElementById('chromaSelect').addEventListener('change', (e) => {
+            gameState.chromaMode = e.target.value;
+        });
+
+        // Initialize
+        generateNotes();
+        render();
+    </script>
+</body>
+</html>
