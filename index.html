@@ -1,483 +1,478 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADOFAI Key Viewer</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADOFAI Key Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
 
-        body {
-            width: 100%;
-            height: 100vh;
-            font-family: 'Arial', sans-serif;
-            background-color: #1a1a1a;
-            color: #fff;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+:root {
+  --bg: #080808;
+  --orange: #ff6a00;
+  --o15: rgba(255,106,0,0.15);
+  --o25: rgba(255,106,0,0.25);
+  --o40: rgba(255,106,0,0.40);
+}
 
-        #hud {
-            height: 60px;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            font-size: 16px;
-            border-bottom: 2px solid #ff6a00;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--orange);
+  font-family: 'JetBrains Mono', monospace;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+}
 
-        .hud-section {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
+/* ── HUD ─────────────────────────────────────── */
+#hud {
+  flex-shrink: 0;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  border-bottom: 1px solid var(--o25);
+  position: relative;
+}
+.stat {
+  display: flex; flex-direction: column; align-items: center;
+}
+.stat-lbl {
+  font-size: 8px; letter-spacing: .18em;
+  opacity: .45; text-transform: uppercase;
+}
+.stat-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px; line-height: 1;
+}
+#s-kps { font-size: 42px; }
+#kps-bar-wrap {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px; background: var(--o15);
+}
+#kps-bar {
+  height: 100%; width: 0%;
+  background: var(--orange);
+  transition: width 80ms linear;
+}
 
-        .stat {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+/* ── CANVAS WRAPPER ──────────────────────────── */
+#cv-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+canvas { display: block; }
 
-        .stat-label {
-            font-size: 11px;
-            color: #999;
-            text-transform: uppercase;
-        }
+/* ── CONTROLS ────────────────────────────────── */
+#ctrl {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex; align-items: center;
+  justify-content: center;
+  gap: 18px;
+  border-top: 1px solid var(--o25);
+  padding: 0 16px;
+}
+.clabel {
+  font-size: 8px; letter-spacing: .15em;
+  opacity: .45; text-transform: uppercase;
+}
+.cval {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; min-width: 32px; text-align: right;
+}
+.sep { width:1px; height:22px; background: var(--o25); }
+.bgroup { display:flex; gap:3px; }
+button {
+  background: transparent;
+  border: 1px solid var(--o40);
+  color: var(--orange);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: .1em;
+  padding: 3px 8px; cursor: pointer;
+  text-transform: uppercase;
+  transition: background .1s;
+}
+button:hover  { background: var(--o15); }
+button.active { background: var(--o25); border-color: var(--orange); }
+button.bg-g { color:#00e040; border-color:#00e040; }
+button.bg-g:hover { background:rgba(0,224,64,.12); }
+button.bg-b { color:#4488ff; border-color:#4488ff; }
+button.bg-b:hover { background:rgba(68,136,255,.12); }
+button.bg-m { color:#ff44cc; border-color:#ff44cc; }
+button.bg-m:hover { background:rgba(255,68,204,.12); }
 
-        .stat-value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #ff6a00;
-        }
-
-        #control-panel {
-            height: 50px;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 0 20px;
-            gap: 20px;
-            flex-wrap: wrap;
-            border-bottom: 1px solid #333;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-        }
-
-        .control-group label {
-            white-space: nowrap;
-            color: #ccc;
-        }
-
-        input[type="range"] {
-            width: 120px;
-            height: 6px;
-            cursor: pointer;
-            accent-color: #ff6a00;
-        }
-
-        select {
-            padding: 5px 10px;
-            background-color: #222;
-            color: #ff6a00;
-            border: 1px solid #ff6a00;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        button {
-            padding: 5px 12px;
-            background-color: #222;
-            color: #ff6a00;
-            border: 1px solid #ff6a00;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        button:hover {
-            background-color: #ff6a00;
-            color: #000;
-        }
-
-        #container {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            width: 100%;
-        }
-
-        #gameCanvas {
-            display: block;
-            background-color: #0a0a0a;
-        }
-
-        .lane-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-        }
-
-        .lane {
-            flex: 1;
-            position: relative;
-            border-right: 1px solid #333;
-            background-color: transparent;
-        }
-
-        .lane:last-child {
-            border-right: none;
-        }
-
-        .key-label {
-            position: absolute;
-            bottom: 10px;
-            width: 100%;
-            text-align: center;
-            font-size: 14px;
-            color: #666;
-            font-weight: bold;
-        }
-    </style>
+input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  width: 110px; height: 2px;
+  background: var(--o25); outline: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: var(--orange); border-radius: 50%;
+}
+</style>
 </head>
 <body>
-    <div id="hud">
-        <div class="hud-section">
-            <div class="stat">
-                <div class="stat-label">Current KPS</div>
-                <div class="stat-value" id="kps">0.0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Max KPS</div>
-                <div class="stat-value" id="maxKps">0.0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Total</div>
-                <div class="stat-value" id="total">0</div>
-            </div>
-        </div>
-        <div class="hud-section" style="margin-left: auto;">
-            <span id="speedDisplay">Speed: 2.5</span>
-        </div>
-    </div>
 
-    <div id="control-panel">
-        <div class="control-group">
-            <label for="speedSlider">Speed:</label>
-            <input type="range" id="speedSlider" min="0.5" max="15" step="0.1" value="2.5">
-        </div>
-        <div class="control-group">
-            <label for="directionSelect">Direction:</label>
-            <select id="directionSelect">
-                <option value="descending">Descending</option>
-                <option value="ascending">Ascending</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="chromaSelect">Background:</label>
-            <select id="chromaSelect">
-                <option value="black">Black</option>
-                <option value="green">Chroma Green</option>
-                <option value="blue">Chroma Blue</option>
-                <option value="magenta">Chroma Magenta</option>
-            </select>
-        </div>
-    </div>
+<div id="hud">
+  <div class="stat"><span class="stat-lbl">KPS</span><span class="stat-val" id="s-kps">0</span></div>
+  <div class="stat"><span class="stat-lbl">Max KPS</span><span class="stat-val" id="s-max">0</span></div>
+  <div class="stat"><span class="stat-lbl">Total</span><span class="stat-val" id="s-tot">0</span></div>
+  <div id="kps-bar-wrap"><div id="kps-bar"></div></div>
+</div>
 
-    <div id="container">
-        <canvas id="gameCanvas"></canvas>
-    </div>
+<div id="cv-wrap">
+  <canvas id="cv"></canvas>
+</div>
 
-    <script>
-        // Key Configuration
-        const KEYS = {
-            '1': 0,
-            '2': 1,
-            'e': 2,
-            'p': 3,
-            '=': 4,
-            'backspace': 5
-        };
+<div id="ctrl">
+  <!-- speed -->
+  <span class="clabel">Speed</span>
+  <input type="range" id="sl-speed" min="0.5" max="15.0" step="0.1" value="2.5">
+  <span class="cval" id="cv-speed">2.5</span>
+  <div class="sep"></div>
+  <!-- direction -->
+  <span class="clabel">Dir</span>
+  <div class="bgroup">
+    <button id="btn-rise" class="active">↑ Rise</button>
+    <button id="btn-fall">↓ Fall</button>
+  </div>
+  <div class="sep"></div>
+  <!-- chroma -->
+  <span class="clabel">BG</span>
+  <div class="bgroup">
+    <button id="bg-def" class="active">Default</button>
+    <button id="bg-grn" class="bg-g">Green</button>
+    <button id="bg-blu" class="bg-b">Blue</button>
+    <button id="bg-mag" class="bg-m">Magenta</button>
+  </div>
+</div>
 
-        const LANE_COUNT = 6;
-        const ORANGE_COLOR = '#ff6a00';
-        const PARTICLE_LIFETIME = 0.3;
-        const PARTICLE_COUNT = 6;
+<script>
+/* ─── CONSTANTS ─────────────────────────────────────────────── */
+const KEYS = [
+  { code:'Digit1',    lbl:'1' },
+  { code:'Digit2',    lbl:'2' },
+  { code:'KeyE',      lbl:'E' },
+  { code:'KeyP',      lbl:'P' },
+  { code:'Equal',     lbl:'=' },
+  { code:'Backspace', lbl:'⌫' },
+];
+const N       = KEYS.length;
+const ORANGE  = '#ff6a00';
+const CAP_H   = 46;  // key cap height px
+const PAD_CAP = 6;   // gap between cap top and hit-line
+const MAX_P   = 6;   // max particles per hit
 
-        // State
-        let gameState = {
-            speed: 2.5,
-            direction: 'descending',
-            chromaMode: 'black',
-            notes: [],
-            particles: [],
-            keyPressed: new Set(),
-            keyPressCount: 0,
-            lastSecondPresses: [],
-            maxKps: 0,
-            totalPresses: 0
-        };
+/* ─── STATE ─────────────────────────────────────────────────── */
+let speedMult = 2.5;
+let dirUp     = true;
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+/* per-lane note segments: { headY, tailY, closed } */
+const lanes   = Array.from({length:N}, ()=>[]);
+/* per-lane particles */
+const parts   = Array.from({length:N}, ()=>[]);
 
-        // Initialize canvas
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 110;
-        }
+const pressed = new Uint8Array(N);   // 1 = held
 
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+let totalHits = 0;
+let maxKps    = 0;
+const hitBuf  = [];   // timestamps for 1s KPS window
 
-        // Get chroma color
-        function getChromaColor() {
-            const colors = {
-                'black': '#0a0a0a',
-                'green': '#00ff00',
-                'blue': '#0000ff',
-                'magenta': '#ff00ff'
-            };
-            return colors[gameState.chromaMode] || colors['black'];
-        }
+/* pulse timers for cap flash */
+const pulseAt = new Float64Array(N);
 
-        // Particle system
-        function createParticles(laneIndex) {
-            const laneWidth = canvas.width / LANE_COUNT;
-            const centerX = (laneIndex + 0.5) * laneWidth;
-            const posY = gameState.direction === 'descending' ? canvas.height - 40 : 40;
+/* ─── CANVAS ────────────────────────────────────────────────── */
+const cvWrap = document.getElementById('cv-wrap');
+const cv     = document.getElementById('cv');
+const ctx    = cv.getContext('2d');
 
-            for (let i = 0; i < PARTICLE_COUNT; i++) {
-                const angle = (Math.random() * Math.PI * 2);
-                const speed = 100 + Math.random() * 150;
-                gameState.particles.push({
-                    x: centerX,
-                    y: posY,
-                    vx: Math.cos(angle) * speed,
-                    vy: (gameState.direction === 'descending' ? -1 : 1) * Math.sin(angle) * speed,
-                    lifetime: PARTICLE_LIFETIME,
-                    maxLifetime: PARTICLE_LIFETIME
-                });
-            }
-        }
+let W = 0, H = 0, LW = 0;   // canvas dims, lane width
 
-        // Update particles
-        function updateParticles(deltaTime) {
-            gameState.particles = gameState.particles.filter(p => {
-                p.lifetime -= deltaTime;
-                p.x += p.vx * deltaTime;
-                p.y += p.vy * deltaTime;
-                return p.lifetime > 0;
-            });
-        }
+function resize() {
+  H  = cvWrap.clientHeight;
+  // 레인 너비: 최소 60px, 최대 100px — 풀화면에서 양옆 여백 생김
+  LW = Math.min(100, Math.max(60, Math.floor(cvWrap.clientWidth / N)));
+  W  = LW * N;
+  cv.width  = W;
+  cv.height = H;
+}
+resize();
+new ResizeObserver(resize).observe(cvWrap);
 
-        // Draw particles
-        function drawParticles() {
-            gameState.particles.forEach(p => {
-                const opacity = p.lifetime / p.maxLifetime;
-                ctx.fillStyle = `rgba(255, 106, 0, ${opacity * 0.8})`;
-                const size = 3 + (1 - opacity) * 2;
-                ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size);
-            });
-        }
+/* ─── HIT LINE Y ────────────────────────────────────────────── */
+function hitY() {
+  return dirUp
+    ? H - CAP_H - PAD_CAP       // bottom (rise mode)
+    : CAP_H + PAD_CAP;           // top (fall mode)
+}
 
-        // Generate notes
-        function generateNotes() {
-            const baseTime = performance.now() / 1000;
-            const viewportHeight = canvas.height;
-            const noteHeight = 30;
-            const laneWidth = canvas.width / LANE_COUNT;
+/* ─── INPUT ─────────────────────────────────────────────────── */
+const codeMap = {};
+KEYS.forEach((k,i) => codeMap[k.code] = i);
 
-            for (let lane = 0; lane < LANE_COUNT; lane++) {
-                // Pattern: alternating single notes and chords
-                for (let i = 0; i < 100; i++) {
-                    let time = baseTime + i * 0.3;
-                    
-                    if (i % 5 === 0 && i % 10 !== 0) {
-                        // Chord of 2-3 lanes
-                        const chordLanes = [lane, (lane + 1) % LANE_COUNT];
-                        if (lane < LANE_COUNT - 1) {
-                            chordLanes.forEach(l => {
-                                const posY = gameState.direction === 'descending' 
-                                    ? time * gameState.speed * 100 
-                                    : canvas.height - time * gameState.speed * 100;
-                                
-                                if (Math.abs(posY - canvas.height / 2) < viewportHeight) {
-                                    gameState.notes.push({
-                                        lane: l,
-                                        time: time,
-                                        height: noteHeight,
-                                        laneWidth: laneWidth
-                                    });
-                                }
-                            });
-                        }
-                    } else if (i % 10 !== 0) {
-                        const posY = gameState.direction === 'descending' 
-                            ? time * gameState.speed * 100 
-                            : canvas.height - time * gameState.speed * 100;
-                        
-                        if (Math.abs(posY - canvas.height / 2) < viewportHeight) {
-                            gameState.notes.push({
-                                lane: lane,
-                                time: time,
-                                height: noteHeight,
-                                laneWidth: laneWidth
-                            });
-                        }
-                    }
-                }
-            }
-        }
+// Capture phase — kill ALL default behaviour for our keys
+window.addEventListener('keydown', e => {
+  if (e.code in codeMap || e.code === 'Backspace') e.preventDefault();
+}, true);
 
-        // Draw notes
-        function drawNotes(currentTime) {
-            const laneWidth = canvas.width / LANE_COUNT;
-            const hitZoneY = gameState.direction === 'descending' ? canvas.height - 50 : 50;
+document.addEventListener('keydown', e => {
+  if (e.code in codeMap || e.code === 'Backspace') e.preventDefault();
+  const i = codeMap[e.code];
+  if (i === undefined || pressed[i]) return;
+  pressed[i] = 1;
+  onPress(i);
+}, false);
 
-            gameState.notes.forEach(note => {
-                const laneX = note.lane * laneWidth;
-                let noteY;
+document.addEventListener('keyup', e => {
+  const i = codeMap[e.code];
+  if (i === undefined) return;
+  pressed[i] = 0;
+  onRelease(i);
+}, false);
 
-                if (gameState.direction === 'descending') {
-                    noteY = canvas.height - (currentTime - note.time) * gameState.speed * 100;
-                } else {
-                    noteY = (currentTime - note.time) * gameState.speed * 100;
-                }
+function onPress(i) {
+  // Register KPS hit
+  const now = performance.now();
+  hitBuf.push(now);
+  totalHits++;
+  pulseAt[i] = now;
+  document.getElementById('s-tot').textContent = totalHits;
 
-                if (noteY > -50 && noteY < canvas.height + 50) {
-                    ctx.fillStyle = ORANGE_COLOR;
-                    ctx.fillRect(laneX, noteY - note.height / 2, laneWidth, note.height);
-                }
-            });
-        }
+  // Open new note segment starting at hitline
+  const hy = hitY();
+  lanes[i].push({ headY: hy, tailY: hy, closed: false });
 
-        // Draw hit zone
-        function drawHitZone() {
-            const laneWidth = canvas.width / LANE_COUNT;
-            const hitZoneY = gameState.direction === 'descending' ? canvas.height - 50 : 50;
-            const hitZoneHeight = 40;
+  // Spawn particles
+  spawnParticles(i, hy);
+}
 
-            ctx.strokeStyle = 'rgba(255, 106, 0, 0.5)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, hitZoneY - hitZoneHeight / 2, canvas.width, hitZoneHeight);
+function onRelease(i) {
+  // Close the active segment
+  const seg = lanes[i].find(s => !s.closed);
+  if (seg) seg.closed = true;
+}
 
-            // Lane separators
-            ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
-            for (let i = 1; i < LANE_COUNT; i++) {
-                const x = i * laneWidth;
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-        }
+/* ─── PARTICLES ─────────────────────────────────────────────── */
+function spawnParticles(lane, hy) {
+  const arr = parts[lane];
+  // prune dead first
+  for (let j = arr.length-1; j >= 0; j--)
+    if (arr[j].life <= 0) arr.splice(j,1);
 
-        // Update KPS
-        function updateKps() {
-            const now = performance.now() / 1000;
-            const oneSecondAgo = now - 1;
+  const cx = lane * LW + LW * 0.5;
+  const dir = dirUp ? -1 : 1;
+  for (let k = 0; k < MAX_P; k++) {
+    const a  = Math.PI * (0.2 + Math.random() * 0.6) * dir + (dir < 0 ? 0 : Math.PI);
+    const sp = 1.2 + Math.random() * 2.2;
+    arr.push({
+      x: cx + (Math.random()-.5) * LW * 0.7,
+      y: hy,
+      vx: Math.cos(a) * sp,
+      vy: Math.sin(a) * sp,
+      life: 1.0,
+      decay: .055 + Math.random() * .055,
+      r: 1.5 + Math.random() * 1.5,
+    });
+  }
+}
 
-            gameState.lastSecondPresses = gameState.lastSecondPresses.filter(t => t > oneSecondAgo);
+/* ─── KPS UPDATE ────────────────────────────────────────────── */
+const sKps  = document.getElementById('s-kps');
+const sMax  = document.getElementById('s-max');
+const kpBar = document.getElementById('kps-bar');
 
-            const currentKps = gameState.lastSecondPresses.length;
-            const kpsDisplay = document.getElementById('kps');
-            kpsDisplay.textContent = currentKps.toFixed(1);
+function updateKps() {
+  const now = performance.now();
+  const cut = now - 1000;
+  while (hitBuf.length && hitBuf[0] < cut) hitBuf.shift();
+  const kps = hitBuf.length;
+  if (kps > maxKps) { maxKps = kps; sMax.textContent = maxKps; }
+  sKps.textContent = kps;
+  kpBar.style.width = (Math.min(100, (kps / Math.max(maxKps,1)) * 100)) + '%';
+}
 
-            if (currentKps > gameState.maxKps) {
-                gameState.maxKps = currentKps;
-                document.getElementById('maxKps').textContent = gameState.maxKps.toFixed(1);
-            }
-        }
+/* ─── RENDER ────────────────────────────────────────────────── */
+const BG_COLORS = {
+  def:     '#080808',
+  green:   '#00ff00',
+  blue:    '#0000ff',
+  magenta: '#ff00ff',
+};
+let bgColor = BG_COLORS.def;
 
-        // Render loop
-        let lastTime = performance.now() / 1000;
-        function render() {
-            const currentTime = performance.now() / 1000;
-            const deltaTime = Math.min(currentTime - lastTime, 0.016);
-            lastTime = currentTime;
+let lastT = 0;
+function frame(ts) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(ts - lastT, 32);   // clamp to avoid spiral
+  lastT = ts;
 
-            // Clear canvas
-            ctx.fillStyle = getChromaColor();
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+  updateKps();
 
-            // Update and draw
-            updateParticles(deltaTime);
-            drawNotes(currentTime);
-            drawParticles();
-            drawHitZone();
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
 
-            updateKps();
+  const hy     = hitY();
+  const pxPerMs = speedMult * 0.18;
 
-            requestAnimationFrame(render);
-        }
+  /* ── LAYER 0: lane dividers (drawn BEHIND notes) ── */
+  ctx.strokeStyle = 'rgba(255,106,0,0.07)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < N; i++) {
+    const x = i * LW;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
 
-        // Event listeners
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            if (KEYS.hasOwnProperty(key) || key === 'backspace') {
-                e.preventDefault();
+  /* hit line */
+  ctx.strokeStyle = 'rgba(255,106,0,0.22)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(W, hy); ctx.stroke();
 
-                const keyName = key === 'backspace' ? 'backspace' : key;
-                
-                if (!gameState.keyPressed.has(keyName)) {
-                    gameState.keyPressed.add(keyName);
-                    gameState.keyPressCount++;
-                    gameState.totalPresses++;
-                    gameState.lastSecondPresses.push(performance.now() / 1000);
+  /* ── LAYER 1: notes (full lane width, NO gaps) ── */
+  ctx.fillStyle = ORANGE;
 
-                    const laneIndex = KEYS[keyName];
-                    createParticles(laneIndex);
+  for (let i = 0; i < N; i++) {
+    const laneX = i * LW;
+    const scroll = pxPerMs * dt;
 
-                    document.getElementById('total').textContent = gameState.totalPresses;
-                }
-            }
-        });
+    const segs = lanes[i];
+    for (let j = segs.length - 1; j >= 0; j--) {
+      const s = segs[j];
 
-        window.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase();
-            const keyName = key === 'backspace' ? 'backspace' : key;
-            
-            if (KEYS.hasOwnProperty(key) || key === 'backspace') {
-                e.preventDefault();
-                gameState.keyPressed.delete(keyName);
-            }
-        });
+      if (!s.closed) {
+        // extend head away from hitline
+        if (dirUp) s.headY -= scroll;
+        else       s.headY += scroll;
+        // tail is always at hitline while key held
+        s.tailY = hy;
+      } else {
+        // scroll entire segment
+        if (dirUp) { s.headY -= scroll; s.tailY -= scroll; }
+        else       { s.headY += scroll; s.tailY += scroll; }
+      }
 
-        // Control panel listeners
-        document.getElementById('speedSlider').addEventListener('input', (e) => {
-            gameState.speed = parseFloat(e.target.value);
-            document.getElementById('speedDisplay').textContent = `Speed: ${gameState.speed.toFixed(1)}`;
-        });
+      // Compute top / bottom of rect
+      let top, bot;
+      if (dirUp) { top = s.headY; bot = s.tailY; }
+      else       { top = s.tailY; bot = s.headY; }
 
-        document.getElementById('directionSelect').addEventListener('change', (e) => {
-            gameState.direction = e.target.value;
-        });
+      // Cull off-screen
+      if (dirUp && bot < 0)  { segs.splice(j,1); continue; }
+      if (!dirUp && top > H) { segs.splice(j,1); continue; }
 
-        document.getElementById('chromaSelect').addEventListener('change', (e) => {
-            gameState.chromaMode = e.target.value;
-        });
+      // Clamp to note area (don't draw into cap zone)
+      const areaTop = dirUp ? 0         : hy;
+      const areaBot = dirUp ? hy        : H - CAP_H - PAD_CAP;
 
-        // Initialize
-        generateNotes();
-        render();
-    </script>
+      // In fall mode, note extends from hitline downward
+      // In rise mode, note extends from hitline upward
+      const drawTop = Math.max(top, dirUp ? 0 : hy);
+      const drawBot = Math.min(bot, dirUp ? hy : H);
+
+      const rh = drawBot - drawTop;
+      if (rh > 0) ctx.fillRect(laneX, drawTop, LW, rh);
+    }
+  }
+
+  /* ── LAYER 2: particles ── */
+  for (let i = 0; i < N; i++) {
+    const arr = parts[i];
+    for (let j = arr.length - 1; j >= 0; j--) {
+      const p = arr[j];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += dirUp ? -.04 : .04;   // slight float
+      p.life -= p.decay;
+      if (p.life <= 0) { arr.splice(j,1); continue; }
+      const a = p.life;
+      ctx.fillStyle = `rgba(255,${Math.round(106 + 100*a)},0,${a.toFixed(2)})`;
+      const r = p.r;
+      ctx.fillRect(p.x - r*.5, p.y - r*.5, r, r);
+    }
+  }
+
+  /* ── LAYER 3: key caps (always on top) ── */
+  for (let i = 0; i < N; i++) {
+    drawCap(i, ts);
+  }
+}
+requestAnimationFrame(frame);
+
+function drawCap(i, ts) {
+  const lx = i * LW;
+  const cy = dirUp ? H - CAP_H : 0;
+  const active = !!pressed[i];
+
+  // cap background
+  ctx.fillStyle = active
+    ? 'rgba(255,106,0,0.30)'
+    : 'rgba(255,106,0,0.07)';
+  ctx.fillRect(lx, cy, LW, CAP_H);
+
+  // cap border (top or bottom edge only, clean)
+  ctx.strokeStyle = active ? ORANGE : 'rgba(255,106,0,0.28)';
+  ctx.lineWidth   = active ? 2 : 1;
+  ctx.strokeRect(lx + .5, cy + .5, LW - 1, CAP_H - 1);
+
+  // press pulse ring
+  const elapsed = ts - pulseAt[i];
+  if (elapsed < 220) {
+    const t = elapsed / 220;
+    const ex = t * 8;
+    ctx.strokeStyle = `rgba(255,106,0,${((1-t)*.55).toFixed(2)})`;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(lx - ex, cy - ex, LW + ex*2, CAP_H + ex*2);
+  }
+
+  // label
+  ctx.fillStyle = active ? ORANGE : 'rgba(255,106,0,0.50)';
+  ctx.font = `${active ? 700 : 400} ${Math.round(LW*.25)}px 'JetBrains Mono', monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(KEYS[i].lbl, lx + LW*.5, cy + CAP_H*.5);
+}
+
+/* ─── CONTROLS ──────────────────────────────────────────────── */
+const slSpeed = document.getElementById('sl-speed');
+const cvSpd   = document.getElementById('cv-speed');
+slSpeed.addEventListener('input', () => {
+  speedMult = parseFloat(slSpeed.value);
+  cvSpd.textContent = speedMult.toFixed(1);
+});
+
+document.getElementById('btn-rise').addEventListener('click', () => {
+  dirUp = true;
+  document.getElementById('btn-rise').classList.add('active');
+  document.getElementById('btn-fall').classList.remove('active');
+});
+document.getElementById('btn-fall').addEventListener('click', () => {
+  dirUp = false;
+  document.getElementById('btn-fall').classList.add('active');
+  document.getElementById('btn-rise').classList.remove('active');
+});
+
+const bgMap = [
+  ['bg-def', BG_COLORS.def],
+  ['bg-grn', BG_COLORS.green],
+  ['bg-blu', BG_COLORS.blue],
+  ['bg-mag', BG_COLORS.magenta],
+];
+bgMap.forEach(([id, col]) => {
+  document.getElementById(id).addEventListener('click', () => {
+    bgColor = col;
+    bgMap.forEach(([bid]) => document.getElementById(bid).classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  });
+});
+</script>
 </body>
 </html>
