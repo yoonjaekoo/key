@@ -135,19 +135,16 @@ input[type=range]::-webkit-slider-thumb {
 </div>
 
 <div id="ctrl">
-  <!-- speed -->
   <span class="clabel">Speed</span>
   <input type="range" id="sl-speed" min="0.5" max="15.0" step="0.1" value="2.5">
   <span class="cval" id="cv-speed">2.5</span>
   <div class="sep"></div>
-  <!-- direction -->
   <span class="clabel">Dir</span>
   <div class="bgroup">
     <button id="btn-rise" class="active">↑ Rise</button>
     <button id="btn-fall">↓ Fall</button>
   </div>
   <div class="sep"></div>
-  <!-- chroma -->
   <span class="clabel">BG</span>
   <div class="bgroup">
     <button id="bg-def" class="active">Default</button>
@@ -159,12 +156,15 @@ input[type=range]::-webkit-slider-thumb {
 
 <script>
 /* ─── CONSTANTS ─────────────────────────────────────────────── */
+// Tab 키와 Backslash 키를 배열 양 끝과 중간에 자연스럽게 배치했습니다.
 const KEYS = [
+  { code:'Tab',       lbl:'⇥' },
   { code:'Digit1',    lbl:'1' },
   { code:'Digit2',    lbl:'2' },
   { code:'KeyE',      lbl:'E' },
   { code:'KeyP',      lbl:'P' },
   { code:'Equal',     lbl:'=' },
+  { code:'Backslash', lbl:'\\' },
   { code:'Backspace', lbl:'⌫' },
 ];
 const N       = KEYS.length;
@@ -200,8 +200,8 @@ let W = 0, H = 0, LW = 0;   // canvas dims, lane width
 
 function resize() {
   H  = cvWrap.clientHeight;
-  // 레인 너비: 최소 60px, 최대 100px — 풀화면에서 양옆 여백 생김
-  LW = Math.min(100, Math.max(60, Math.floor(cvWrap.clientWidth / N)));
+  // 8키 확장을 고려해 최소 너비를 45px로 조절하여 좁은 화면에서도 안 깨지게 조정
+  LW = Math.min(100, Math.max(45, Math.floor(cvWrap.clientWidth / N)));
   W  = LW * N;
   cv.width  = W;
   cv.height = H;
@@ -220,13 +220,13 @@ function hitY() {
 const codeMap = {};
 KEYS.forEach((k,i) => codeMap[k.code] = i);
 
-// Capture phase — kill ALL default behaviour for our keys
+// 브라우저 기본 단축키 기본 동작 차단 (Tab 포커스 이동, Backspace 뒤로가기 등 방지)
 window.addEventListener('keydown', e => {
-  if (e.code in codeMap || e.code === 'Backspace') e.preventDefault();
+  if (e.code in codeMap) e.preventDefault();
 }, true);
 
 document.addEventListener('keydown', e => {
-  if (e.code in codeMap || e.code === 'Backspace') e.preventDefault();
+  if (e.code in codeMap) e.preventDefault();
   const i = codeMap[e.code];
   if (i === undefined || pressed[i]) return;
   pressed[i] = 1;
@@ -234,6 +234,7 @@ document.addEventListener('keydown', e => {
 }, false);
 
 document.addEventListener('keyup', e => {
+  if (e.code in codeMap) e.preventDefault();
   const i = codeMap[e.code];
   if (i === undefined) return;
   pressed[i] = 0;
@@ -433,9 +434,9 @@ function drawCap(i, ts) {
     ctx.strokeRect(lx - ex, cy - ex, LW + ex*2, CAP_H + ex*2);
   }
 
-  // label
+  // label (폰트 크기 비율을 기존 0.25에서 0.28로 살짝 키워 가독성 상향)
   ctx.fillStyle = active ? ORANGE : 'rgba(255,106,0,0.50)';
-  ctx.font = `${active ? 700 : 400} ${Math.round(LW*.25)}px 'JetBrains Mono', monospace`;
+  ctx.font = `${active ? 700 : 400} ${Math.round(LW*.28)}px 'JetBrains Mono', monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(KEYS[i].lbl, lx + LW*.5, cy + CAP_H*.5);
