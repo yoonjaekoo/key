@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADOFAI 16K Key Viewer</title>
+<title>ADOFAI Key Viewer</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
@@ -21,7 +21,6 @@
   --m10:rgba(255,106,0,.10);
   --m20:rgba(255,106,0,.20);
   --m30:rgba(255,106,0,.30);
-  --m40:rgba(255,106,0,.40);
 }
 
 html,body{
@@ -39,11 +38,8 @@ body{
   flex-direction:column;
 }
 
-/* HUD */
-
 #hud{
   height:72px;
-  flex-shrink:0;
   border-bottom:1px solid var(--m20);
 
   display:flex;
@@ -79,9 +75,10 @@ body{
 
 #kps-bar-wrap{
   position:absolute;
-  bottom:0;
   left:0;
   right:0;
+  bottom:0;
+
   height:2px;
   background:var(--m10);
 }
@@ -92,12 +89,9 @@ body{
   background:var(--main);
 }
 
-/* CANVAS */
-
 #wrap{
   flex:1;
   overflow:hidden;
-  position:relative;
   display:flex;
   justify-content:center;
 }
@@ -106,12 +100,8 @@ canvas{
   display:block;
 }
 
-/* CONTROL */
-
 #ctrl{
   height:56px;
-  flex-shrink:0;
-
   border-top:1px solid var(--m20);
 
   display:flex;
@@ -122,8 +112,8 @@ canvas{
 
 .label{
   font-size:8px;
-  letter-spacing:.15em;
   opacity:.5;
+  letter-spacing:.15em;
   text-transform:uppercase;
 }
 
@@ -142,18 +132,15 @@ canvas{
 
 button{
   background:transparent;
-  border:1px solid var(--m40);
+  border:1px solid var(--m30);
   color:var(--main);
 
   padding:4px 10px;
 
-  cursor:pointer;
-
-  font-size:9px;
   font-family:'JetBrains Mono', monospace;
+  font-size:9px;
 
-  letter-spacing:.1em;
-  text-transform:uppercase;
+  cursor:pointer;
 }
 
 button:hover{
@@ -168,7 +155,6 @@ button.active{
 input[type=range]{
   width:120px;
 }
-
 </style>
 </head>
 <body>
@@ -207,7 +193,7 @@ input[type=range]{
   <input type="range"
          id="speed"
          min="0.5"
-         max="20"
+         max="15"
          step="0.1"
          value="3.0">
 
@@ -223,30 +209,25 @@ input[type=range]{
 <script>
 
 /* =========================================================
-   16K LAYOUT
+   KEYS
 ========================================================= */
 
 const KEYS = [
 
   { code:'Tab',        lbl:'⇥' },
-  { code:'KeyQ',       lbl:'Q' },
-  { code:'KeyW',       lbl:'W' },
-  { code:'KeyE',       lbl:'E' },
-
-  { code:'CapsLock',   lbl:'⇪' },
-  { code:'KeyA',       lbl:'A' },
-  { code:'KeyS',       lbl:'S' },
-  { code:'KeyD',       lbl:'D' },
-
-  { code:'ShiftLeft',  lbl:'⇧' },
-  { code:'KeyZ',       lbl:'Z' },
-  { code:'KeyX',       lbl:'X' },
-  { code:'KeyC',       lbl:'C' },
-
   { code:'Digit1',     lbl:'1' },
   { code:'Digit2',     lbl:'2' },
-  { code:'Digit3',     lbl:'3' },
+  { code:'KeyE',       lbl:'E' },
+
+  { code:'KeyP',       lbl:'P' },
+  { code:'Equal',      lbl:'=' },
+  { code:'Backslash',  lbl:'\\' },
   { code:'Backspace',  lbl:'⌫' },
+
+  { code:'KeyC',       lbl:'C' },
+  { code:'Space',      lbl:'␠' },
+  { code:'Lang1',      lbl:'한/영' },
+  { code:'Comma',      lbl:',' },
 
 ];
 
@@ -257,7 +238,7 @@ const ORANGE = '#ff6a00';
 const CAP_H = 48;
 const PAD = 6;
 
-const MAX_PARTICLES = 6;
+const MAX_PARTICLES = 5;
 
 /* =========================================================
    STATE
@@ -268,9 +249,6 @@ let dirUp = true;
 
 const lanes = Array.from({length:N}, ()=>[]);
 const particles = Array.from({length:N}, ()=>[]);
-
-const held = new Uint8Array(N);
-const lastHit = new Float64Array(N);
 
 let totalHits = 0;
 let maxKps = 0;
@@ -297,7 +275,7 @@ function resize(){
   LW = Math.min(
     90,
     Math.max(
-      42,
+      52,
       Math.floor(wrap.clientWidth / N)
     )
   );
@@ -353,7 +331,10 @@ document.addEventListener('keydown', e=>{
 
   e.preventDefault();
 
-  held[i] = 1;
+  // 브라우저 자동 반복 차단
+  if(e.repeat) return;
+
+  pressLane(i);
 
 }, false);
 
@@ -364,8 +345,6 @@ document.addEventListener('keyup', e=>{
   if(i === undefined) return;
 
   e.preventDefault();
-
-  held[i] = 0;
 
   closeSegment(i);
 
@@ -432,7 +411,7 @@ function spawnParticles(lane, hy){
       dir +
       (dir < 0 ? 0 : Math.PI);
 
-    const sp = 1 + Math.random()*2.2;
+    const sp = 1 + Math.random()*2;
 
     arr.push({
 
@@ -474,6 +453,7 @@ function updateKps(){
   if(kps > maxKps){
 
     maxKps = kps;
+
     sMax.textContent = maxKps;
   }
 
@@ -500,25 +480,6 @@ function frame(ts){
 
   lastFrame = ts;
 
-  const now = performance.now();
-
-  /* ======================================
-     NKRO + 동타 처리
-  ====================================== */
-
-  for(let i=0; i<N; i++){
-
-    if(held[i]){
-
-      if(now - lastHit[i] > 16){
-
-        lastHit[i] = now;
-
-        pressLane(i);
-      }
-    }
-  }
-
   updateKps();
 
   ctx.fillStyle = '#080808';
@@ -528,7 +489,7 @@ function frame(ts){
 
   const pxPerMs = speedMult * .18;
 
-  /* dividers */
+  /* lane lines */
 
   ctx.strokeStyle = 'rgba(255,106,0,.08)';
   ctx.lineWidth = 1;
@@ -543,7 +504,7 @@ function frame(ts){
     ctx.stroke();
   }
 
-  /* hitline */
+  /* hit line */
 
   ctx.strokeStyle = 'rgba(255,106,0,.25)';
 
@@ -571,8 +532,11 @@ function frame(ts){
       if(!s.closed){
 
         if(dirUp){
+
           s.headY -= scroll;
+
         }else{
+
           s.headY += scroll;
         }
 
@@ -673,7 +637,6 @@ function frame(ts){
   /* caps */
 
   for(let i=0; i<N; i++){
-
     drawCap(i, ts);
   }
 }
@@ -681,7 +644,7 @@ function frame(ts){
 requestAnimationFrame(frame);
 
 /* =========================================================
-   CAP
+   CAPS
 ========================================================= */
 
 function drawCap(i, ts){
@@ -692,7 +655,8 @@ function drawCap(i, ts){
     ? H - CAP_H
     : 0;
 
-  const active = held[i];
+  const active =
+    lanes[i].some(s => !s.closed);
 
   ctx.fillStyle = active
     ? 'rgba(255,106,0,.28)'
@@ -746,7 +710,7 @@ function drawCap(i, ts){
     : 'rgba(255,106,0,.5)';
 
   ctx.font =
-    `${active ? 700 : 400} ${Math.round(LW*.25)}px 'JetBrains Mono'`;
+    `${active ? 700 : 400} ${Math.round(LW*.24)}px 'JetBrains Mono'`;
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
