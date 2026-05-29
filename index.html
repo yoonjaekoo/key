@@ -1,479 +1,803 @@
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADOFAI Key Viewer</title>
+<title>ADOFAI 16K Key Viewer</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-
-:root {
-  --bg: #080808;
-  --orange: #ff6a00;
-  --o15: rgba(255,106,0,0.15);
-  --o25: rgba(255,106,0,0.25);
-  --o40: rgba(255,106,0,0.40);
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-html, body {
-  width: 100%; height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--orange);
-  font-family: 'JetBrains Mono', monospace;
-  user-select: none;
-  display: flex;
-  flex-direction: column;
+:root{
+  --bg:#080808;
+  --main:#ff6a00;
+  --m10:rgba(255,106,0,.10);
+  --m20:rgba(255,106,0,.20);
+  --m30:rgba(255,106,0,.30);
+  --m40:rgba(255,106,0,.40);
 }
 
-/* ── HUD ─────────────────────────────────────── */
-#hud {
-  flex-shrink: 0;
-  height: 68px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 36px;
-  border-bottom: 1px solid var(--o25);
-  position: relative;
-}
-.stat {
-  display: flex; flex-direction: column; align-items: center;
-}
-.stat-lbl {
-  font-size: 8px; letter-spacing: .18em;
-  opacity: .45; text-transform: uppercase;
-}
-.stat-val {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 30px; line-height: 1;
-}
-#s-kps { font-size: 42px; }
-#kps-bar-wrap {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  height: 2px; background: var(--o15);
-}
-#kps-bar {
-  height: 100%; width: 0%;
-  background: var(--orange);
-  transition: width 80ms linear;
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--main);
+  font-family:'JetBrains Mono', monospace;
+  user-select:none;
 }
 
-/* ── CANVAS WRAPPER ──────────────────────────── */
-#cv-wrap {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
+body{
+  display:flex;
+  flex-direction:column;
 }
-canvas { display: block; }
 
-/* ── CONTROLS ────────────────────────────────── */
-#ctrl {
-  flex-shrink: 0;
-  height: 52px;
-  display: flex; align-items: center;
-  justify-content: center;
-  gap: 18px;
-  border-top: 1px solid var(--o25);
-  padding: 0 16px;
-}
-.clabel {
-  font-size: 8px; letter-spacing: .15em;
-  opacity: .45; text-transform: uppercase;
-}
-.cval {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px; min-width: 32px; text-align: right;
-}
-.sep { width:1px; height:22px; background: var(--o25); }
-.bgroup { display:flex; gap:3px; }
-button {
-  background: transparent;
-  border: 1px solid var(--o40);
-  color: var(--orange);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 8px; letter-spacing: .1em;
-  padding: 3px 8px; cursor: pointer;
-  text-transform: uppercase;
-  transition: background .1s;
-}
-button:hover  { background: var(--o15); }
-button.active { background: var(--o25); border-color: var(--orange); }
-button.bg-g { color:#00e040; border-color:#00e040; }
-button.bg-g:hover { background:rgba(0,224,64,.12); }
-button.bg-b { color:#4488ff; border-color:#4488ff; }
-button.bg-b:hover { background:rgba(68,136,255,.12); }
-button.bg-m { color:#ff44cc; border-color:#ff44cc; }
-button.bg-m:hover { background:rgba(255,68,204,.12); }
+/* HUD */
 
-input[type=range] {
-  -webkit-appearance: none; appearance: none;
-  width: 110px; height: 2px;
-  background: var(--o25); outline: none; cursor: pointer;
+#hud{
+  height:72px;
+  flex-shrink:0;
+  border-bottom:1px solid var(--m20);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:48px;
+
+  position:relative;
 }
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px; height: 12px;
-  background: var(--orange); border-radius: 50%;
+
+.stat{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
+
+.stat-lbl{
+  font-size:8px;
+  opacity:.5;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+
+.stat-val{
+  font-family:'Bebas Neue', sans-serif;
+  font-size:34px;
+  line-height:1;
+}
+
+#s-kps{
+  font-size:48px;
+}
+
+#kps-bar-wrap{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
+  height:2px;
+  background:var(--m10);
+}
+
+#kps-bar{
+  width:0%;
+  height:100%;
+  background:var(--main);
+}
+
+/* CANVAS */
+
+#wrap{
+  flex:1;
+  overflow:hidden;
+  position:relative;
+  display:flex;
+  justify-content:center;
+}
+
+canvas{
+  display:block;
+}
+
+/* CONTROL */
+
+#ctrl{
+  height:56px;
+  flex-shrink:0;
+
+  border-top:1px solid var(--m20);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+}
+
+.label{
+  font-size:8px;
+  letter-spacing:.15em;
+  opacity:.5;
+  text-transform:uppercase;
+}
+
+.val{
+  font-family:'Bebas Neue', sans-serif;
+  font-size:22px;
+  min-width:40px;
+  text-align:right;
+}
+
+.sep{
+  width:1px;
+  height:22px;
+  background:var(--m20);
+}
+
+button{
+  background:transparent;
+  border:1px solid var(--m40);
+  color:var(--main);
+
+  padding:4px 10px;
+
+  cursor:pointer;
+
+  font-size:9px;
+  font-family:'JetBrains Mono', monospace;
+
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+button:hover{
+  background:var(--m10);
+}
+
+button.active{
+  background:var(--m20);
+  border-color:var(--main);
+}
+
+input[type=range]{
+  width:120px;
+}
+
 </style>
 </head>
 <body>
 
 <div id="hud">
-  <div class="stat"><span class="stat-lbl">KPS</span><span class="stat-val" id="s-kps">0</span></div>
-  <div class="stat"><span class="stat-lbl">Max KPS</span><span class="stat-val" id="s-max">0</span></div>
-  <div class="stat"><span class="stat-lbl">Total</span><span class="stat-val" id="s-tot">0</span></div>
-  <div id="kps-bar-wrap"><div id="kps-bar"></div></div>
+
+  <div class="stat">
+    <span class="stat-lbl">KPS</span>
+    <span class="stat-val" id="s-kps">0</span>
+  </div>
+
+  <div class="stat">
+    <span class="stat-lbl">MAX</span>
+    <span class="stat-val" id="s-max">0</span>
+  </div>
+
+  <div class="stat">
+    <span class="stat-lbl">TOTAL</span>
+    <span class="stat-val" id="s-total">0</span>
+  </div>
+
+  <div id="kps-bar-wrap">
+    <div id="kps-bar"></div>
+  </div>
+
 </div>
 
-<div id="cv-wrap">
+<div id="wrap">
   <canvas id="cv"></canvas>
 </div>
 
 <div id="ctrl">
-  <span class="clabel">Speed</span>
-  <input type="range" id="sl-speed" min="0.5" max="15.0" step="0.1" value="2.5">
-  <span class="cval" id="cv-speed">2.5</span>
+
+  <span class="label">Speed</span>
+
+  <input type="range"
+         id="speed"
+         min="0.5"
+         max="20"
+         step="0.1"
+         value="3.0">
+
+  <span class="val" id="speed-val">3.0</span>
+
   <div class="sep"></div>
-  <span class="clabel">Dir</span>
-  <div class="bgroup">
-    <button id="btn-rise" class="active">↑ Rise</button>
-    <button id="btn-fall">↓ Fall</button>
-  </div>
-  <div class="sep"></div>
-  <span class="clabel">BG</span>
-  <div class="bgroup">
-    <button id="bg-def" class="active">Default</button>
-    <button id="bg-grn" class="bg-g">Green</button>
-    <button id="bg-blu" class="bg-b">Blue</button>
-    <button id="bg-mag" class="bg-m">Magenta</button>
-  </div>
+
+  <button id="rise" class="active">Rise</button>
+  <button id="fall">Fall</button>
+
 </div>
 
 <script>
-/* ─── CONSTANTS ─────────────────────────────────────────────── */
-// Tab 키와 Backslash 키를 배열 양 끝과 중간에 자연스럽게 배치했습니다.
+
+/* =========================================================
+   16K LAYOUT
+========================================================= */
+
 const KEYS = [
-  { code:'Tab',       lbl:'⇥' },
-  { code:'Digit1',    lbl:'1' },
-  { code:'Digit2',    lbl:'2' },
-  { code:'KeyE',      lbl:'E' },
-  { code:'KeyP',      lbl:'P' },
-  { code:'Equal',     lbl:'=' },
-  { code:'Backslash', lbl:'\\' },
-  { code:'Backspace', lbl:'⌫' },
+
+  { code:'Tab',        lbl:'⇥' },
+  { code:'KeyQ',       lbl:'Q' },
+  { code:'KeyW',       lbl:'W' },
+  { code:'KeyE',       lbl:'E' },
+
+  { code:'CapsLock',   lbl:'⇪' },
+  { code:'KeyA',       lbl:'A' },
+  { code:'KeyS',       lbl:'S' },
+  { code:'KeyD',       lbl:'D' },
+
+  { code:'ShiftLeft',  lbl:'⇧' },
+  { code:'KeyZ',       lbl:'Z' },
+  { code:'KeyX',       lbl:'X' },
+  { code:'KeyC',       lbl:'C' },
+
+  { code:'Digit1',     lbl:'1' },
+  { code:'Digit2',     lbl:'2' },
+  { code:'Digit3',     lbl:'3' },
+  { code:'Backspace',  lbl:'⌫' },
+
 ];
-const N       = KEYS.length;
-const ORANGE  = '#ff6a00';
-const CAP_H   = 46;  // key cap height px
-const PAD_CAP = 6;   // gap between cap top and hit-line
-const MAX_P   = 6;   // max particles per hit
 
-/* ─── STATE ─────────────────────────────────────────────────── */
-let speedMult = 2.5;
-let dirUp     = true;
+const N = KEYS.length;
 
-/* per-lane note segments: { headY, tailY, closed } */
-const lanes   = Array.from({length:N}, ()=>[]);
-/* per-lane particles */
-const parts   = Array.from({length:N}, ()=>[]);
+const ORANGE = '#ff6a00';
 
-const pressed = new Uint8Array(N);   // 1 = held
+const CAP_H = 48;
+const PAD = 6;
+
+const MAX_PARTICLES = 6;
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let speedMult = 3.0;
+let dirUp = true;
+
+const lanes = Array.from({length:N}, ()=>[]);
+const particles = Array.from({length:N}, ()=>[]);
+
+const held = new Uint8Array(N);
+const lastHit = new Float64Array(N);
 
 let totalHits = 0;
-let maxKps    = 0;
-const hitBuf  = [];   // timestamps for 1s KPS window
+let maxKps = 0;
 
-/* pulse timers for cap flash */
+const hitBuffer = [];
 const pulseAt = new Float64Array(N);
 
-/* ─── CANVAS ────────────────────────────────────────────────── */
-const cvWrap = document.getElementById('cv-wrap');
-const cv     = document.getElementById('cv');
-const ctx    = cv.getContext('2d');
+/* =========================================================
+   CANVAS
+========================================================= */
 
-let W = 0, H = 0, LW = 0;   // canvas dims, lane width
+const wrap = document.getElementById('wrap');
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
 
-function resize() {
-  H  = cvWrap.clientHeight;
-  // 8키 확장을 고려해 최소 너비를 45px로 조절하여 좁은 화면에서도 안 깨지게 조정
-  LW = Math.min(100, Math.max(45, Math.floor(cvWrap.clientWidth / N)));
-  W  = LW * N;
-  cv.width  = W;
+let W = 0;
+let H = 0;
+let LW = 0;
+
+function resize(){
+
+  H = wrap.clientHeight;
+
+  LW = Math.min(
+    90,
+    Math.max(
+      42,
+      Math.floor(wrap.clientWidth / N)
+    )
+  );
+
+  W = LW * N;
+
+  cv.width = W;
   cv.height = H;
 }
-resize();
-new ResizeObserver(resize).observe(cvWrap);
 
-/* ─── HIT LINE Y ────────────────────────────────────────────── */
-function hitY() {
+resize();
+
+new ResizeObserver(resize).observe(wrap);
+
+/* =========================================================
+   HIT LINE
+========================================================= */
+
+function hitY(){
+
   return dirUp
-    ? H - CAP_H - PAD_CAP       // bottom (rise mode)
-    : CAP_H + PAD_CAP;           // top (fall mode)
+    ? H - CAP_H - PAD
+    : CAP_H + PAD;
 }
 
-/* ─── INPUT ─────────────────────────────────────────────────── */
-const codeMap = {};
-KEYS.forEach((k,i) => codeMap[k.code] = i);
+/* =========================================================
+   KEYMAP
+========================================================= */
 
-// 브라우저 기본 단축키 기본 동작 차단 (Tab 포커스 이동, Backspace 뒤로가기 등 방지)
-window.addEventListener('keydown', e => {
-  if (e.code in codeMap) e.preventDefault();
+const codeMap = {};
+
+KEYS.forEach((k,i)=>{
+  codeMap[k.code] = i;
+});
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+window.addEventListener('keydown', e=>{
+
+  if(e.code in codeMap){
+    e.preventDefault();
+  }
+
 }, true);
 
-document.addEventListener('keydown', e => {
-  if (e.code in codeMap) e.preventDefault();
+document.addEventListener('keydown', e=>{
+
   const i = codeMap[e.code];
-  if (i === undefined || pressed[i]) return;
-  pressed[i] = 1;
-  onPress(i);
+
+  if(i === undefined) return;
+
+  e.preventDefault();
+
+  held[i] = 1;
+
 }, false);
 
-document.addEventListener('keyup', e => {
-  if (e.code in codeMap) e.preventDefault();
+document.addEventListener('keyup', e=>{
+
   const i = codeMap[e.code];
-  if (i === undefined) return;
-  pressed[i] = 0;
-  onRelease(i);
+
+  if(i === undefined) return;
+
+  e.preventDefault();
+
+  held[i] = 0;
+
+  closeSegment(i);
+
 }, false);
 
-function onPress(i) {
-  // Register KPS hit
+/* =========================================================
+   SEGMENTS
+========================================================= */
+
+function pressLane(i){
+
   const now = performance.now();
-  hitBuf.push(now);
+
+  hitBuffer.push(now);
+
   totalHits++;
+
   pulseAt[i] = now;
-  document.getElementById('s-tot').textContent = totalHits;
 
-  // Open new note segment starting at hitline
+  document.getElementById('s-total').textContent = totalHits;
+
   const hy = hitY();
-  lanes[i].push({ headY: hy, tailY: hy, closed: false });
 
-  // Spawn particles
+  lanes[i].push({
+    headY:hy,
+    tailY:hy,
+    closed:false
+  });
+
   spawnParticles(i, hy);
 }
 
-function onRelease(i) {
-  // Close the active segment
-  const seg = lanes[i].find(s => !s.closed);
-  if (seg) seg.closed = true;
+function closeSegment(i){
+
+  const arr = lanes[i];
+
+  for(let j=arr.length-1; j>=0; j--){
+
+    if(!arr[j].closed){
+
+      arr[j].closed = true;
+      return;
+    }
+  }
 }
 
-/* ─── PARTICLES ─────────────────────────────────────────────── */
-function spawnParticles(lane, hy) {
-  const arr = parts[lane];
-  // prune dead first
-  for (let j = arr.length-1; j >= 0; j--)
-    if (arr[j].life <= 0) arr.splice(j,1);
+/* =========================================================
+   PARTICLES
+========================================================= */
 
-  const cx = lane * LW + LW * 0.5;
+function spawnParticles(lane, hy){
+
+  const arr = particles[lane];
+
+  const cx = lane * LW + LW * .5;
+
   const dir = dirUp ? -1 : 1;
-  for (let k = 0; k < MAX_P; k++) {
-    const a  = Math.PI * (0.2 + Math.random() * 0.6) * dir + (dir < 0 ? 0 : Math.PI);
-    const sp = 1.2 + Math.random() * 2.2;
+
+  for(let i=0; i<MAX_PARTICLES; i++){
+
+    const a =
+      Math.PI *
+      (0.2 + Math.random()*0.6) *
+      dir +
+      (dir < 0 ? 0 : Math.PI);
+
+    const sp = 1 + Math.random()*2.2;
+
     arr.push({
-      x: cx + (Math.random()-.5) * LW * 0.7,
-      y: hy,
-      vx: Math.cos(a) * sp,
-      vy: Math.sin(a) * sp,
-      life: 1.0,
-      decay: .055 + Math.random() * .055,
-      r: 1.5 + Math.random() * 1.5,
+
+      x:cx,
+      y:hy,
+
+      vx:Math.cos(a)*sp,
+      vy:Math.sin(a)*sp,
+
+      life:1,
+
+      decay:.04 + Math.random()*.04,
+
+      r:1 + Math.random()*2
     });
   }
 }
 
-/* ─── KPS UPDATE ────────────────────────────────────────────── */
-const sKps  = document.getElementById('s-kps');
-const sMax  = document.getElementById('s-max');
+/* =========================================================
+   KPS
+========================================================= */
+
+const sKps = document.getElementById('s-kps');
+const sMax = document.getElementById('s-max');
 const kpBar = document.getElementById('kps-bar');
 
-function updateKps() {
+function updateKps(){
+
   const now = performance.now();
+
   const cut = now - 1000;
-  while (hitBuf.length && hitBuf[0] < cut) hitBuf.shift();
-  const kps = hitBuf.length;
-  if (kps > maxKps) { maxKps = kps; sMax.textContent = maxKps; }
+
+  while(hitBuffer.length && hitBuffer[0] < cut){
+    hitBuffer.shift();
+  }
+
+  const kps = hitBuffer.length;
+
+  if(kps > maxKps){
+
+    maxKps = kps;
+    sMax.textContent = maxKps;
+  }
+
   sKps.textContent = kps;
-  kpBar.style.width = (Math.min(100, (kps / Math.max(maxKps,1)) * 100)) + '%';
+
+  kpBar.style.width =
+    Math.min(
+      100,
+      (kps / Math.max(maxKps,1)) * 100
+    ) + '%';
 }
 
-/* ─── RENDER ────────────────────────────────────────────────── */
-const BG_COLORS = {
-  def:     '#080808',
-  green:   '#00ff00',
-  blue:    '#0000ff',
-  magenta: '#ff00ff',
-};
-let bgColor = BG_COLORS.def;
+/* =========================================================
+   RENDER
+========================================================= */
 
-let lastT = 0;
-function frame(ts) {
+let lastFrame = 0;
+
+function frame(ts){
+
   requestAnimationFrame(frame);
-  const dt = Math.min(ts - lastT, 32);   // clamp to avoid spiral
-  lastT = ts;
+
+  const dt = Math.min(ts - lastFrame, 32);
+
+  lastFrame = ts;
+
+  const now = performance.now();
+
+  /* ======================================
+     NKRO + 동타 처리
+  ====================================== */
+
+  for(let i=0; i<N; i++){
+
+    if(held[i]){
+
+      if(now - lastHit[i] > 16){
+
+        lastHit[i] = now;
+
+        pressLane(i);
+      }
+    }
+  }
 
   updateKps();
 
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#080808';
+  ctx.fillRect(0,0,W,H);
 
-  const hy     = hitY();
-  const pxPerMs = speedMult * 0.18;
+  const hy = hitY();
 
-  /* ── LAYER 0: lane dividers (drawn BEHIND notes) ── */
-  ctx.strokeStyle = 'rgba(255,106,0,0.07)';
+  const pxPerMs = speedMult * .18;
+
+  /* dividers */
+
+  ctx.strokeStyle = 'rgba(255,106,0,.08)';
   ctx.lineWidth = 1;
-  for (let i = 1; i < N; i++) {
+
+  for(let i=1; i<N; i++){
+
     const x = i * LW;
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,H);
+    ctx.stroke();
   }
 
-  /* hit line */
-  ctx.strokeStyle = 'rgba(255,106,0,0.22)';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(W, hy); ctx.stroke();
+  /* hitline */
 
-  /* ── LAYER 1: notes (full lane width, NO gaps) ── */
+  ctx.strokeStyle = 'rgba(255,106,0,.25)';
+
+  ctx.beginPath();
+  ctx.moveTo(0,hy);
+  ctx.lineTo(W,hy);
+  ctx.stroke();
+
+  /* notes */
+
   ctx.fillStyle = ORANGE;
 
-  for (let i = 0; i < N; i++) {
+  for(let i=0; i<N; i++){
+
     const laneX = i * LW;
-    const scroll = pxPerMs * dt;
 
     const segs = lanes[i];
-    for (let j = segs.length - 1; j >= 0; j--) {
+
+    for(let j=segs.length-1; j>=0; j--){
+
       const s = segs[j];
 
-      if (!s.closed) {
-        // extend head away from hitline
-        if (dirUp) s.headY -= scroll;
-        else       s.headY += scroll;
-        // tail is always at hitline while key held
+      const scroll = pxPerMs * dt;
+
+      if(!s.closed){
+
+        if(dirUp){
+          s.headY -= scroll;
+        }else{
+          s.headY += scroll;
+        }
+
         s.tailY = hy;
-      } else {
-        // scroll entire segment
-        if (dirUp) { s.headY -= scroll; s.tailY -= scroll; }
-        else       { s.headY += scroll; s.tailY += scroll; }
+
+      }else{
+
+        if(dirUp){
+
+          s.headY -= scroll;
+          s.tailY -= scroll;
+
+        }else{
+
+          s.headY += scroll;
+          s.tailY += scroll;
+        }
       }
 
-      // Compute top / bottom of rect
-      let top, bot;
-      if (dirUp) { top = s.headY; bot = s.tailY; }
-      else       { top = s.tailY; bot = s.headY; }
+      let top;
+      let bottom;
 
-      // Cull off-screen
-      if (dirUp && bot < 0)  { segs.splice(j,1); continue; }
-      if (!dirUp && top > H) { segs.splice(j,1); continue; }
+      if(dirUp){
 
-      // Clamp to note area (don't draw into cap zone)
-      const areaTop = dirUp ? 0         : hy;
-      const areaBot = dirUp ? hy        : H - CAP_H - PAD_CAP;
+        top = s.headY;
+        bottom = s.tailY;
 
-      // In fall mode, note extends from hitline downward
-      // In rise mode, note extends from hitline upward
-      const drawTop = Math.max(top, dirUp ? 0 : hy);
-      const drawBot = Math.min(bot, dirUp ? hy : H);
+      }else{
 
-      const rh = drawBot - drawTop;
-      if (rh > 0) ctx.fillRect(laneX, drawTop, LW, rh);
+        top = s.tailY;
+        bottom = s.headY;
+      }
+
+      if(dirUp && bottom < 0){
+
+        segs.splice(j,1);
+        continue;
+      }
+
+      if(!dirUp && top > H){
+
+        segs.splice(j,1);
+        continue;
+      }
+
+      const drawTop = Math.max(top,0);
+      const drawBottom = Math.min(bottom,H);
+
+      const rh = drawBottom - drawTop;
+
+      if(rh > 0){
+
+        ctx.fillRect(
+          laneX,
+          drawTop,
+          LW,
+          rh
+        );
+      }
     }
   }
 
-  /* ── LAYER 2: particles ── */
-  for (let i = 0; i < N; i++) {
-    const arr = parts[i];
-    for (let j = arr.length - 1; j >= 0; j--) {
+  /* particles */
+
+  for(let i=0; i<N; i++){
+
+    const arr = particles[i];
+
+    for(let j=arr.length-1; j>=0; j--){
+
       const p = arr[j];
+
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += dirUp ? -.04 : .04;   // slight float
+
+      p.vy += dirUp ? -.03 : .03;
+
       p.life -= p.decay;
-      if (p.life <= 0) { arr.splice(j,1); continue; }
-      const a = p.life;
-      ctx.fillStyle = `rgba(255,${Math.round(106 + 100*a)},0,${a.toFixed(2)})`;
-      const r = p.r;
-      ctx.fillRect(p.x - r*.5, p.y - r*.5, r, r);
+
+      if(p.life <= 0){
+
+        arr.splice(j,1);
+        continue;
+      }
+
+      ctx.fillStyle =
+        `rgba(255,106,0,${p.life})`;
+
+      ctx.fillRect(
+        p.x,
+        p.y,
+        p.r,
+        p.r
+      );
     }
   }
 
-  /* ── LAYER 3: key caps (always on top) ── */
-  for (let i = 0; i < N; i++) {
+  /* caps */
+
+  for(let i=0; i<N; i++){
+
     drawCap(i, ts);
   }
 }
+
 requestAnimationFrame(frame);
 
-function drawCap(i, ts) {
-  const lx = i * LW;
-  const cy = dirUp ? H - CAP_H : 0;
-  const active = !!pressed[i];
+/* =========================================================
+   CAP
+========================================================= */
 
-  // cap background
+function drawCap(i, ts){
+
+  const x = i * LW;
+
+  const y = dirUp
+    ? H - CAP_H
+    : 0;
+
+  const active = held[i];
+
   ctx.fillStyle = active
-    ? 'rgba(255,106,0,0.30)'
-    : 'rgba(255,106,0,0.07)';
-  ctx.fillRect(lx, cy, LW, CAP_H);
+    ? 'rgba(255,106,0,.28)'
+    : 'rgba(255,106,0,.08)';
 
-  // cap border (top or bottom edge only, clean)
-  ctx.strokeStyle = active ? ORANGE : 'rgba(255,106,0,0.28)';
-  ctx.lineWidth   = active ? 2 : 1;
-  ctx.strokeRect(lx + .5, cy + .5, LW - 1, CAP_H - 1);
+  ctx.fillRect(
+    x,
+    y,
+    LW,
+    CAP_H
+  );
 
-  // press pulse ring
+  ctx.strokeStyle = active
+    ? ORANGE
+    : 'rgba(255,106,0,.25)';
+
+  ctx.lineWidth = active ? 2 : 1;
+
+  ctx.strokeRect(
+    x + .5,
+    y + .5,
+    LW - 1,
+    CAP_H - 1
+  );
+
+  /* pulse */
+
   const elapsed = ts - pulseAt[i];
-  if (elapsed < 220) {
+
+  if(elapsed < 220){
+
     const t = elapsed / 220;
+
     const ex = t * 8;
-    ctx.strokeStyle = `rgba(255,106,0,${((1-t)*.55).toFixed(2)})`;
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(lx - ex, cy - ex, LW + ex*2, CAP_H + ex*2);
+
+    ctx.strokeStyle =
+      `rgba(255,106,0,${(1-t)*.5})`;
+
+    ctx.strokeRect(
+      x - ex,
+      y - ex,
+      LW + ex*2,
+      CAP_H + ex*2
+    );
   }
 
-  // label (폰트 크기 비율을 기존 0.25에서 0.28로 살짝 키워 가독성 상향)
-  ctx.fillStyle = active ? ORANGE : 'rgba(255,106,0,0.50)';
-  ctx.font = `${active ? 700 : 400} ${Math.round(LW*.28)}px 'JetBrains Mono', monospace`;
+  /* label */
+
+  ctx.fillStyle = active
+    ? ORANGE
+    : 'rgba(255,106,0,.5)';
+
+  ctx.font =
+    `${active ? 700 : 400} ${Math.round(LW*.25)}px 'JetBrains Mono'`;
+
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(KEYS[i].lbl, lx + LW*.5, cy + CAP_H*.5);
+
+  ctx.fillText(
+    KEYS[i].lbl,
+    x + LW*.5,
+    y + CAP_H*.5
+  );
 }
 
-/* ─── CONTROLS ──────────────────────────────────────────────── */
-const slSpeed = document.getElementById('sl-speed');
-const cvSpd   = document.getElementById('cv-speed');
-slSpeed.addEventListener('input', () => {
-  speedMult = parseFloat(slSpeed.value);
-  cvSpd.textContent = speedMult.toFixed(1);
+/* =========================================================
+   CONTROLS
+========================================================= */
+
+const speed = document.getElementById('speed');
+const speedVal = document.getElementById('speed-val');
+
+speed.addEventListener('input', ()=>{
+
+  speedMult = parseFloat(speed.value);
+
+  speedVal.textContent =
+    speedMult.toFixed(1);
 });
 
-document.getElementById('btn-rise').addEventListener('click', () => {
+document.getElementById('rise')
+.addEventListener('click', ()=>{
+
   dirUp = true;
-  document.getElementById('btn-rise').classList.add('active');
-  document.getElementById('btn-fall').classList.remove('active');
-});
-document.getElementById('btn-fall').addEventListener('click', () => {
-  dirUp = false;
-  document.getElementById('btn-fall').classList.add('active');
-  document.getElementById('btn-rise').classList.remove('active');
+
+  document.getElementById('rise')
+    .classList.add('active');
+
+  document.getElementById('fall')
+    .classList.remove('active');
 });
 
-const bgMap = [
-  ['bg-def', BG_COLORS.def],
-  ['bg-grn', BG_COLORS.green],
-  ['bg-blu', BG_COLORS.blue],
-  ['bg-mag', BG_COLORS.magenta],
-];
-bgMap.forEach(([id, col]) => {
-  document.getElementById(id).addEventListener('click', () => {
-    bgColor = col;
-    bgMap.forEach(([bid]) => document.getElementById(bid).classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-  });
+document.getElementById('fall')
+.addEventListener('click', ()=>{
+
+  dirUp = false;
+
+  document.getElementById('fall')
+    .classList.add('active');
+
+  document.getElementById('rise')
+    .classList.remove('active');
 });
+
 </script>
 </body>
 </html>
+```
