@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -221,8 +220,8 @@ const KEYS = [
 
   { code:'KeyP',       lbl:'P' },
   { code:'Equal',      lbl:'=' },
-  { code:'Backslash',  lbl:'\\' },
   { code:'Backspace',  lbl:'⌫' },
+  { code:'Backslash',  lbl:'\\' },
 
   { code:'KeyC',       lbl:'C' },
   { code:'Space',      lbl:'␠' },
@@ -309,6 +308,13 @@ const codeMap = {};
 
 KEYS.forEach((k,i)=>{
   codeMap[k.code] = i;
+});
+
+/* Chromebook 한/영키 대응 */
+const hangulIndex = KEYS.findIndex(k => k.lbl === '한/영');
+
+['HangulMode','KanaMode','Convert','NonConvert'].forEach(code=>{
+  codeMap[code] = hangulIndex;
 });
 
 /* =========================================================
@@ -764,4 +770,3 @@ document.getElementById('fall')
 </script>
 </body>
 </html>
-```
