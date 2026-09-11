@@ -92,12 +92,11 @@ function prettyKey(e){
   return e.key&&e.key.length<=8?e.key:e.code;
 }
 let listeningIndex=null;
-window.addEventListener('keydown',e=>{
-  if(listeningIndex!==null||e.code in codeMap) e.preventDefault();
-},true);
-document.addEventListener('keydown',e=>{
+const pressedCodes=new Set();
+function handleKeyDown(e){
   if(listeningIndex!==null){
     e.preventDefault();
+    e.stopPropagation();
     if(e.repeat) return;
     const target=listeningIndex;
     const other=KEYS.findIndex((k,i)=>i!==target&&k.code===e.code);
@@ -111,9 +110,34 @@ document.addEventListener('keydown',e=>{
     rebuildCodeMap();renderKeyGrid();resize();
     return;
   }
-  const i=codeMap[e.code];if(i===undefined)return;e.preventDefault();if(e.repeat)return;pressLane(i);
-},false);
-document.addEventListener('keyup',e=>{if(listeningIndex!==null)return;const i=codeMap[e.code];if(i===undefined)return;e.preventDefault();closeSegment(i)},false);
+  const i=codeMap[e.code];
+  if(i===undefined)return;
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.repeat||pressedCodes.has(e.code))return;
+  pressedCodes.add(e.code);
+  pressLane(i);
+}
+function handleKeyUp(e){
+  if(listeningIndex!==null)return;
+  const i=codeMap[e.code];
+  if(i===undefined)return;
+  e.preventDefault();
+  e.stopPropagation();
+  pressedCodes.delete(e.code);
+  closeSegment(i);
+}
+window.addEventListener('keydown',handleKeyDown,true);
+window.addEventListener('keyup',handleKeyUp,true);
+window.addEventListener('blur',()=>{
+  pressedCodes.clear();
+  for(let i=0;i<N;i++){
+    const arr=lanes[i];
+    for(let j=arr.length-1;j>=0;j--){
+      if(!arr[j].closed){arr[j].closed=true;break;}
+    }
+  }
+});
 function pressLane(i){const now=performance.now();hitBuffer.push(now);totalHits++;pulseAt[i]=now;document.getElementById('s-total').textContent=totalHits;const hy=hitY();lanes[i].push({headY:hy,tailY:hy,closed:false});spawnParticles(i,hy)}
 function closeSegment(i){const arr=lanes[i];for(let j=arr.length-1;j>=0;j--){if(!arr[j].closed){arr[j].closed=true;return}}}
 function spawnParticles(lane,hy){const arr=particles[lane],cx=lane*LW+LW*.5,dir=dirUp?-1:1;for(let i=0;i<MAX_PARTICLES;i++){const a=Math.PI*(.2+Math.random()*.6)*dir+(dir<0?0:Math.PI),sp=1+Math.random()*2;arr.push({x:cx,y:hy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,decay:.04+Math.random()*.04,r:1+Math.random()*2})}}
