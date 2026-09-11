@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "ADOFAI Key Viewer Relay",
-  "version": "1.0.1",
-  "description": "Relays only configured gameplay keys from the Onack student page to the local key viewer.",
+  "version": "1.0.2",
+  "description": "Relays only configured gameplay keys from the Onack student page to the ADOFAI key viewer.",
   "permissions": ["storage"],
   "content_scripts": [
     {
@@ -10,6 +10,12 @@
       "js": ["content.js"],
       "run_at": "document_start",
       "all_frames": true
+    },
+    {
+      "matches": ["https://yoonjaekoo.github.io/key/*"],
+      "js": ["viewer-bridge.js"],
+      "run_at": "document_start",
+      "all_frames": false
     }
   ],
   "background": {
