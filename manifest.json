@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "ADOFAI Key Viewer Relay",
+  "version": "1.0.0",
+  "description": "Relays gameplay key presses from the active Chrome tab to the ADOFAI key viewer.",
+  "permissions": [],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "ADOFAI Key Viewer"
+  }
+}
