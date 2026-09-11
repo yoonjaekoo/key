@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ADOFAI Key Viewer Relay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Relays only configured gameplay keys from the Onack student page to the local key viewer.",
   "permissions": ["storage"],
   "content_scripts": [
@@ -9,7 +9,7 @@
       "matches": ["https://nct.onacktedu.co.kr/hub/goe/0/class/student*"],
       "js": ["content.js"],
       "run_at": "document_start",
-      "all_frames": false
+      "all_frames": true
     }
   ],
   "background": {
